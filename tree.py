@@ -1,166 +1,212 @@
 from node import Node
 
-class Tree:
+
+class Tree(object):
     def __init__(self):
         self.root = None
-        self.size = 0
 
-    def get_size(self):
-        return self.size
+    def find(self, k: float):
+        return self.__find(k, self.root)
 
-    def insert(self, value):
-        if self.root is None:
-            self.root = Node(value)
-            self.size += 1
-            return True
-        else:
-            inserted = self.insert_node(self.root, value)
-            if inserted:
-                self.size += 1
-                return True
-            return False
-
-    def insert_node(self, current: Node, value):
-        if value < current.get_value():
-            if current.get_left_child() is None:
-                current.set_left_child(Node(value))
-                return True
-            else:
-                return self.insert_node(current.get_left_child(), value)
-        elif value > current.get_value():
-            if current.get_right_child() is None:
-                current.set_right_child(Node(value))
-                return True
-            else:
-                return self.insert_node(current.get_right_child(), value)
-        else:
-            print("duplicated value")
-            return False
-
-    def contains(self, value):
-        return self.find_node(value) is not None
-
-    def find_parent(self, value):
-        return self.__find_parent_node(self.root, value)
-
-    def __find_parent_node(self, current: Node, value):
-        if current is None:
-            return None
-        if value == current.get_value():
-            return None
-        if value < current.get_value():
-            if current.get_left_child() is None:
-                return None
-            elif current.get_left_child().get_value() == value:
-                return current
-            else:
-                return self.__find_parent_node(current.get_left_child(), value)
-        else:
-            if current.get_right_child() is None:
-                return None
-            elif current.get_right_child().get_value() == value:
-                return current
-            else:
-                return self.__find_parent_node(current.get_right_child(), value)
-
-    def find_node(self, value):
-        return self.__find_node_tree(self.root, value)
-
-    def __find_node_tree(self, current: Node, value):
-        if current is None:
-            return None
-        if current.get_value() == value:
+    def __find(self, k: float, current: Node):
+        if k == current.value:  # Found it
             return current
-        elif value < current.get_value():
-            return self.__find_node_tree(current.get_left_child(), value)
+        elif k < current.value:  # Value is less than current node value, go left
+            if current.left_child is None:  # Value is not in the tree
+                return None
+            else:
+                return self.__find(k, current.left_child)  # Go down another level in the left
         else:
-            return self.__find_node_tree(current.get_right_child(), value)
+            if current.right_child is None:  # Value is not in the tree
+                return None
+            else:
+                return self.__find(k, current.right_child)  # Go down another level in the right
 
-    def remove_node(self, value):
-        node_to_remove = self.find_node(value)
-        if node_to_remove is None:
-            return False
-        if node_to_remove is self.root:
-            return self.delete_root()
-        parent = self.find_parent(value)
-        if self.size == 1:
-            self.root = None
-        elif node_to_remove.get_left_child() is None and node_to_remove.get_right_child() is None:
-            if node_to_remove.get_value() < parent.get_value():
-                parent.set_left_child(None)
-            else:
-                parent.right_child(None)
-        elif node_to_remove.get_left_child() is None and node_to_remove.get_right_child() is not None:
-            if node_to_remove.get_value() < parent.get_value():
-                parent.set_left_child(node_to_remove.get_right_child())
-            else:
-                parent.set_right_child(node_to_remove.get_right_child())
-        elif node_to_remove.get_left_child() is not None and node_to_remove.get_right_child() is None:
-            if node_to_remove.get_value() < parent.get_value():
-                parent.set_left_child(node_to_remove.get_left_child())
-            else:
-                parent.set_right_child(node_to_remove.get_left_child())
-        else:
-            largest_value = node_to_remove.get_left_child()
-            while largest_value.get_right_child() is not None:
-                largest_value = largest_value.get_right_child()
-            parent_largest_value = self.find_parent(largest_value.get_value())
-            parent_largest_value.set_right_child(None)
-            node_to_remove.set_value(largest_value.get_value())
-        self.size -= 1
-        return True
+    def find_min(self, current: Node):
+        while current.left_child is not None:  # Go down the tree following the extreme left path until the end
+            current = current.left_child
+        return current
 
-    def delete_root(self):
-        if self.root.get_left_child() is None and self.root.get_right_child() is None:
-            self.root = None
-            return True
-            # Case 2.2: Root node has left child
-        elif self.root.get_left_child() and self.root.get_right_child() is None:
-            self.root = self.root.get_left_child()
-            return True
-            # Case 2.3: Root node has right child
-        elif self.root.get_left_child() is None and self.root.get_right_child():
-            self.root = self.root.get_right_child()
-            return True
-            # Case 2.4: Root node has two children
+    def next_value(self, k: float):  # Returns the immediately bigger number of k,
+        # example: k = 2, returns 3 (if 3 is in the tree)
+        current = self.find(k)
+        if current.right_child is not None:  # if there is a right child, the minimum value
+            # of the right subtree is the immediately bigger number
+            return self.find_min(current.right_child)
+        while current.parent is not None and current is current.parent.right_child:  # Goes up the tree until is root
+            # or the node is the left child of the parent, if that happens, it means that the parent is the
+            # immediately bigger number
+            current = current.parent
+        return current.parent
+
+    def height(self, node: Node):
+        if node is None:
+            return -1
         else:
-            move_node = self.root.get_right_child()
-            move_node_parent = None
-            while move_node.get_left_child() is not None:
-                move_node_parent = move_node
-                move_node = move_node.get_left_child()
-            if move_node_parent is not None:
-                if move_node.get_value() < move_node_parent.get_value():
-                    move_node_parent.set_left_child(None)
+            return node.height
+
+    def new_height(self, node: Node):  # Sets the node with the height of its childs + 1 (inverted height)
+        node.height = max(self.height(node.left_child), self.height(node.right_child)) + 1
+
+    def left_rotation(self, to_rotate: Node):
+        right_child = to_rotate.right_child
+        right_child.parent = to_rotate.parent
+        if right_child.parent is None:
+            self.root = right_child
+        else:
+            if right_child.parent.left_child is to_rotate:
+                right_child.parent.left_child = right_child
+            elif right_child.parent.right_child is to_rotate:
+                right_child.parent.right_child = right_child
+        to_rotate.right_child = right_child.left_child
+        if to_rotate.right_child is not None:
+            to_rotate.right_child.parent = to_rotate
+        right_child.left_child = to_rotate
+        to_rotate.parent = right_child
+        self.new_height(to_rotate)
+        self.new_height(right_child)
+
+    def right_rotation(self, to_rotate: Node):
+        left_child = to_rotate.left_child
+        left_child.parent = to_rotate.parent
+        if left_child.parent is None:
+            self.root = left_child
+        else:
+            if left_child.parent.left_child is to_rotate:
+                left_child.parent.left_child = left_child
+            elif left_child.parent.right_child is to_rotate:
+                left_child.parent.right_child = left_child
+        to_rotate.left_child = left_child.right_child
+        if to_rotate.left_child is not None:
+            to_rotate.left_child.parent = to_rotate
+        left_child.right_child = to_rotate
+        to_rotate.parent = left_child
+        self.new_height(to_rotate)
+        self.new_height(left_child)
+
+    def check_balance(self, node: Node):  # goes up the whole tree rebalancing when necessary
+        while node is not None:
+            self.new_height(node)
+            if self.height(node.left_child) >= 2 + self.height(node.right_child):  # If there is a
+                # difference between the two children bigger than 2, needs rebalancing.
+                if self.height(node.left_child.left_child) >= self.height(node.left_child.right_child):
+                    self.right_rotation(node)
                 else:
-                    move_node_parent.set_right_child(None)
-            else:
-                if move_node.get_value() < self.root.get_value():
-                    self.root.set_left_child(None)
+                    self.left_rotation(node.left_child)
+                    self.right_rotation(node)
+            elif self.height(node.right_child) >= 2 + self.height(node.left_child):  # If there is a
+                # difference between the two children bigger than 2, needs rebalancing.
+                if self.height(node.right_child.right_child) >= self.height(node.right_child.left_child):
+                    self.left_rotation(node)
                 else:
-                    self.root.set_right_child(None)
-            self.root.set_value(move_node.get_value())
-            return True
+                    self.right_rotation(node.right_child)
+                    self.left_rotation(node)
+            node = node.parent
 
-    def level_by_level(self, current):
-        current_level = [current]
-        while len(current_level) > 0:
-            print(' '.join(str(node.get_value()) for node in current_level))
-            next_level = []
-            for n in current_level:
-                if n.get_left_child() is not None:
-                    next_level.append(n.get_left_child())
-                if n.get_right_child() is not None:
-                    next_level.append(n.get_right_child())
-                current_level = next_level
+    def insert(self, k: float):
+        node = Node(None, k)
+        if self.root is None:  # if the root doesn't exist, the root becames the only node
+            self.root = node
+        else:
+            self.__insert(node, self.root)
+        self.check_balance(node)
 
-    def print_(self):
-        self.level_by_level(self.root)
+    def __insert(self, to_insert: Node, current: Node):
+        if to_insert is None:
+            return
+        if to_insert.value < current.value:  # Is less than, go left
+            if current.left_child is None:
+                to_insert.parent = current
+                current.left_child = to_insert
+            else:
+                self.__insert(to_insert, current.left_child)
+        elif to_insert.value > current.value:  # Is bigger than, go right
+            if current.right_child is None:
+                to_insert.parent = current
+                current.right_child = to_insert
+            else:
+                self.__insert(to_insert, current.right_child)
+        else:
+            print("Valor duplicado")
+            return
 
+    def delete(self, k: float):
+        node = self.find(k) if type(k) is not Node else k
+        if node is None:
+            return None
+        if node is self.root:  # If the node to be deleted is the root
+            pseudoroot = Node(None, 0)
+            pseudoroot.left_child = self.root
+            self.root.parent = pseudoroot
+            deleted = self.__delete(self.root)
+            self.root = pseudoroot.left_child
+            if self.root is not None:
+                self.root.parent = None
+        else:
+            deleted = self.__delete(node)
+        self.check_balance(deleted.parent)
 
+    def __delete(self, current: Node):
+        if current.left_child is None or current.right_child is None:
+            if current is current.parent.left_child:
+                current.parent.left_child = current.left_child or current.right_child  # Choose the one that is not None
+                if current.parent.left_child is not None:
+                    current.parent.left_child.parent = current.parent
+            else:
+                current.parent.right_child = current.left_child or current.right_child
+                if current.parent.right_child is not None:
+                    current.parent.right_child.parent = current.parent
+            return current
+        else:
+            s = self.next_value(current.value)
+            current.value, s.value = s.value, current.value
+            return self.__delete(s)
 
+    def display(self):
+        lines, _, _, _ = self._display_aux(self.root)
+        for line in lines:
+            print(line)
 
+    def _display_aux(self, current: Node):
+        # No child.
+        if current.right_child is None and current.left_child is None:
+            line = '%s' % current.value
+            width = len(line)
+            height = 1
+            middle = width // 2
+            return [line], width, height, middle
 
+        # Only left child.
+        if current.right_child is None:
+            lines, n, p, x = self._display_aux(current.left_child)
+            s = '%s' % current.value
+            u = len(s)
+            first_line = (x + 1) * ' ' + (n - x - 1) * '_' + s
+            second_line = x * ' ' + '/' + (n - x - 1 + u) * ' '
+            shifted_lines = [line + u * ' ' for line in lines]
+            return [first_line, second_line] + shifted_lines, n + u, p + 2, n + u // 2
 
+        # Only right child.
+        if current.left_child is None:
+            lines, n, p, x = self._display_aux(current.right_child)
+            s = '%s' % current.value
+            u = len(s)
+            first_line = s + x * '_' + (n - x) * ' '
+            second_line = (u + x) * ' ' + '\\' + (n - x - 1) * ' '
+            shifted_lines = [u * ' ' + line for line in lines]
+            return [first_line, second_line] + shifted_lines, n + u, p + 2, u // 2
 
-
+        # Two children.
+        left, n, p, x = self._display_aux(current.left_child)
+        right, m, q, y = self._display_aux(current.right_child)
+        s = '%s' % current.value
+        u = len(s)
+        first_line = (x + 1) * ' ' + (n - x - 1) * '' + s + y * '' + (m - y) * ' '
+        second_line = x * ' ' + '/' + (n - x - 1 + u + y) * ' ' + '\\' + (m - y - 1) * ' '
+        if p < q:
+            left += [n * ' '] * (q - p)
+        elif q < p:
+            right += [m * ' '] * (p - q)
+        zipped_lines = zip(left, right)
+        lines = [first_line, second_line] + [a + u * ' ' + b for a, b in zipped_lines]
+        return lines, n + m + u, max(p, q) + 2, n + u // 2
